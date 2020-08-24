@@ -15,7 +15,7 @@ struct PhysicsCategory {
     static let Land: UInt32 = 0x1 << 2
     static let Obstrucion: UInt32 = 0x1 << 3
     static let Score: UInt32 = 0x1 << 4
-    
+    static let Check: UInt32 = 0x1 << 5
 }
 
 class GameScene: SKScene {
@@ -23,7 +23,7 @@ class GameScene: SKScene {
     let ball = SKShapeNode(circleOfRadius: 50)
     
     var land: SKSpriteNode = {
-        let land = SKSpriteNode(color: .brown, size: CGSize(width: 1000, height: 100))
+        let land = SKSpriteNode(color: .white, size: CGSize(width: 1000, height: 100))
         land.name = "myLand"
         return land
     }()
@@ -37,6 +37,7 @@ class GameScene: SKScene {
     let scoreLabel = SKLabelNode()
     var lose = Bool()
     var restartButton = SKSpriteNode()
+    var isBallHasContactWithLand = false
     
     override func didMove(to view: SKView) {
         
@@ -48,6 +49,7 @@ class GameScene: SKScene {
         if gameStarted == false {
         
             gameStarted = true
+            
             ball.physicsBody?.affectedByGravity = true
             obstruction = SKSpriteNode(color: .red, size: CGSize(width: 100, height: 100))
             
@@ -64,18 +66,24 @@ class GameScene: SKScene {
             let moveObstructions = SKAction.moveBy(x: -distance - 400, y: 0, duration: TimeInterval(0.003 * distance))
             let removeObstructions = SKAction.removeFromParent()
             moveAndRemove = SKAction.sequence([moveObstructions, removeObstructions])
+    
+            if isBallHasContactWithLand {
+                ball.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
+                ball.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 400))
+                isBallHasContactWithLand = false
+            }
             
-            ball.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
-            ball.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 300))
         } else {
             
             if lose == true {
                 
-                
             } else {
                 
-                ball.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
-                ball.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 300))
+                if isBallHasContactWithLand {
+                    ball.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
+                    ball.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 300))
+                    isBallHasContactWithLand = false
+                }
             }
         }
         
@@ -94,8 +102,8 @@ class GameScene: SKScene {
     
     func createObstruction() {
         
-        let randomHeight = CGFloat.random(min: 50, max: 200)
-        let randomWidth = CGFloat.random(min: 50, max: 100)
+        let randomHeight = CGFloat.random(min: 50, max: 180)
+        let randomWidth = CGFloat.random(min: 50, max: 200)
         
         let scoreNode = SKSpriteNode()
         scoreNode.size = CGSize(width: 1, height: self.frame.height)
@@ -106,7 +114,7 @@ class GameScene: SKScene {
         scoreNode.physicsBody?.categoryBitMask = PhysicsCategory.Score
         scoreNode.physicsBody?.collisionBitMask = 0
         scoreNode.physicsBody?.contactTestBitMask = PhysicsCategory.Ball
-        scoreNode.color = SKColor.blue
+//        scoreNode.color = SKColor.blue
         
         obstruction = SKNode()
         
@@ -130,12 +138,18 @@ class GameScene: SKScene {
         self.addChild(obstruction)
     }
     
-    func createButton() {
+    func createRestartButton() {
         
-        restartButton = SKSpriteNode(color: SKColor.blue, size: CGSize(width: 200, height: 100))
+        restartButton = SKSpriteNode(color: SKColor.white, size: CGSize(width: 300, height: 150))
         restartButton.position = CGPoint(x: 0, y: 0)
         restartButton.zPosition = 1
         self.addChild(restartButton)
+        
+        let restartLabel = SKLabelNode(text: "Restart")
+        restartLabel.fontColor = .darkGray
+        restartLabel.fontSize = 60
+        restartLabel.position = CGPoint(x: 0, y: -25)
+        restartButton.addChild(restartLabel)
     }
     
     func restartGame() {
@@ -166,13 +180,13 @@ class GameScene: SKScene {
         land.physicsBody?.isDynamic = false
         self.addChild(land)
         
-        ball.position = CGPoint(x: 0, y: 0)
+        ball.position = CGPoint(x: 0, y: 0 )
         ball.fillColor = SKColor.white
         ball.physicsBody = SKPhysicsBody(circleOfRadius: ball.frame.height / 2)
         ball.physicsBody?.categoryBitMask = PhysicsCategory.Ball
         ball.physicsBody?.collisionBitMask = PhysicsCategory.Land | PhysicsCategory.Obstrucion
         ball.physicsBody?.contactTestBitMask = PhysicsCategory.Land | PhysicsCategory.Obstrucion | PhysicsCategory.Score
-        ball.physicsBody?.affectedByGravity = false
+        ball.physicsBody?.affectedByGravity = true
         ball.physicsBody?.isDynamic = true
         ball.zPosition = 2
         self.addChild(ball)
@@ -187,19 +201,31 @@ extension GameScene: SKPhysicsContactDelegate {
     
     func didBegin(_ contact: SKPhysicsContact) {
         
-        let firstBody = contact.bodyA
-        let secondBody = contact.bodyB
         
-        if firstBody.categoryBitMask == PhysicsCategory.Score && secondBody.categoryBitMask == PhysicsCategory.Ball || firstBody.categoryBitMask == PhysicsCategory.Ball && secondBody.categoryBitMask == PhysicsCategory.Score {
+        if !lose {
             
-            score += 1
-            scoreLabel.text = "\(score)"
-        }
-        
-        if firstBody.categoryBitMask == PhysicsCategory.Ball && secondBody.categoryBitMask == PhysicsCategory.Obstrucion || firstBody.categoryBitMask == PhysicsCategory.Obstrucion && secondBody.categoryBitMask == PhysicsCategory.Ball {
+            let firstBody = contact.bodyA
+            let secondBody = contact.bodyB
             
-            lose = true
-            createButton()
+            if firstBody.categoryBitMask == PhysicsCategory.Land && secondBody.categoryBitMask == PhysicsCategory.Ball || firstBody.categoryBitMask == PhysicsCategory.Ball && secondBody.categoryBitMask == PhysicsCategory.Land {
+                
+                isBallHasContactWithLand = true
+            } else {
+                
+                isBallHasContactWithLand = false
+            }
+            
+            if firstBody.categoryBitMask == PhysicsCategory.Score && secondBody.categoryBitMask == PhysicsCategory.Ball || firstBody.categoryBitMask == PhysicsCategory.Ball && secondBody.categoryBitMask == PhysicsCategory.Score {
+                
+                score += 1
+                scoreLabel.text = "\(score)"
+            }
+            
+            if firstBody.categoryBitMask == PhysicsCategory.Ball && secondBody.categoryBitMask == PhysicsCategory.Obstrucion || firstBody.categoryBitMask == PhysicsCategory.Obstrucion && secondBody.categoryBitMask == PhysicsCategory.Ball {
+                
+                lose = true
+                createRestartButton()
+            }
         }
     }
 }
