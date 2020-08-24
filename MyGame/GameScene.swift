@@ -34,37 +34,13 @@ class GameScene: SKScene {
     var moveAndRemove = SKAction()
     var gameStarted = Bool()
     var score = Int()
-    var scoreLabel = SKLabelNode()
+    let scoreLabel = SKLabelNode()
+    var lose = Bool()
+    var restartButton = SKSpriteNode()
     
     override func didMove(to view: SKView) {
         
-        self.physicsWorld.contactDelegate = self
-        scoreLabel.position = CGPoint(x: 0, y: self.frame.height / 4)
-        scoreLabel.fontColor = .white
-        scoreLabel.fontSize = 100
-        scoreLabel.text = "\(score)"
-        self.addChild(scoreLabel)
-        
-        land.position = CGPoint(x: 0, y: -self.frame.height / 2 + land.frame.height / 2)
-        land.physicsBody = SKPhysicsBody(rectangleOf: land.size)
-        land.physicsBody?.categoryBitMask = PhysicsCategory.Land
-        land.physicsBody?.collisionBitMask = PhysicsCategory.Ball
-        land.physicsBody?.contactTestBitMask = PhysicsCategory.Ball
-        land.physicsBody?.affectedByGravity = false
-        land.physicsBody?.isDynamic = false
-        self.addChild(land)
-        
-        ball.position = CGPoint(x: 0, y: 0)
-        ball.fillColor = SKColor.white
-        ball.physicsBody = SKPhysicsBody(circleOfRadius: ball.frame.height / 2)
-        ball.physicsBody?.categoryBitMask = PhysicsCategory.Ball
-        ball.physicsBody?.collisionBitMask = PhysicsCategory.Land | PhysicsCategory.Obstrucion
-        ball.physicsBody?.contactTestBitMask = PhysicsCategory.Land | PhysicsCategory.Obstrucion | PhysicsCategory.Score
-        ball.physicsBody?.affectedByGravity = false
-        ball.physicsBody?.isDynamic = true
-        ball.zPosition = 2
-        self.addChild(ball)
-        
+        createScene()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -93,8 +69,26 @@ class GameScene: SKScene {
             ball.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 300))
         } else {
             
-            ball.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
-            ball.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 300))
+            if lose == true {
+                
+                
+            } else {
+                
+                ball.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
+                ball.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 300))
+            }
+        }
+        
+        for touch in touches {
+            
+            let location = touch.location(in: self)
+            
+            if lose == true {
+                
+                if restartButton.contains(location) {
+                    restartGame()
+                }
+            }
         }
     }
     
@@ -136,6 +130,54 @@ class GameScene: SKScene {
         self.addChild(obstruction)
     }
     
+    func createButton() {
+        
+        restartButton = SKSpriteNode(color: SKColor.blue, size: CGSize(width: 200, height: 100))
+        restartButton.position = CGPoint(x: 0, y: 0)
+        restartButton.zPosition = 1
+        self.addChild(restartButton)
+    }
+    
+    func restartGame() {
+        
+        self.removeAllChildren()
+        self.removeAllActions()
+        lose = false
+        gameStarted = false
+        score = 0
+        createScene()
+    }
+    
+    func createScene() {
+        
+        self.physicsWorld.contactDelegate = self
+        scoreLabel.position = CGPoint(x: 0, y: self.frame.height / 4)
+        scoreLabel.fontColor = .white
+        scoreLabel.fontSize = 100
+        scoreLabel.text = "\(score)"
+        self.addChild(scoreLabel)
+        
+        land.position = CGPoint(x: 0, y: -self.frame.height / 2 + land.frame.height / 2)
+        land.physicsBody = SKPhysicsBody(rectangleOf: land.size)
+        land.physicsBody?.categoryBitMask = PhysicsCategory.Land
+        land.physicsBody?.collisionBitMask = PhysicsCategory.Ball
+        land.physicsBody?.contactTestBitMask = PhysicsCategory.Ball
+        land.physicsBody?.affectedByGravity = false
+        land.physicsBody?.isDynamic = false
+        self.addChild(land)
+        
+        ball.position = CGPoint(x: 0, y: 0)
+        ball.fillColor = SKColor.white
+        ball.physicsBody = SKPhysicsBody(circleOfRadius: ball.frame.height / 2)
+        ball.physicsBody?.categoryBitMask = PhysicsCategory.Ball
+        ball.physicsBody?.collisionBitMask = PhysicsCategory.Land | PhysicsCategory.Obstrucion
+        ball.physicsBody?.contactTestBitMask = PhysicsCategory.Land | PhysicsCategory.Obstrucion | PhysicsCategory.Score
+        ball.physicsBody?.affectedByGravity = false
+        ball.physicsBody?.isDynamic = true
+        ball.zPosition = 2
+        self.addChild(ball)
+    }
+    
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
     }
@@ -152,6 +194,12 @@ extension GameScene: SKPhysicsContactDelegate {
             
             score += 1
             scoreLabel.text = "\(score)"
+        }
+        
+        if firstBody.categoryBitMask == PhysicsCategory.Ball && secondBody.categoryBitMask == PhysicsCategory.Obstrucion || firstBody.categoryBitMask == PhysicsCategory.Obstrucion && secondBody.categoryBitMask == PhysicsCategory.Ball {
+            
+            lose = true
+            createButton()
         }
     }
 }
