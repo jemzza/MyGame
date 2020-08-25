@@ -43,7 +43,8 @@ class GameScene: SKScene {
             self.run(spawnRepeatForever)
             
             let distance = CGFloat(self.frame.width + obstruction.frame.width)
-            let moveObstructions = SKAction.moveBy(x: -distance - 400, y: 0, duration: TimeInterval(0.003 * distance))
+            let moveObstructions = SKAction.moveBy(x: -distance - 400, y: 0, duration: TimeInterval(0.003 * distance ))
+
             let removeObstructions = SKAction.removeFromParent()
             moveAndRemove = SKAction.sequence([moveObstructions, removeObstructions])
     
