@@ -12,8 +12,6 @@ import GameplayKit
 class GameScene: SKScene {
 
     var ball = Ball.set(at: CGPoint(x: 0, y: 0))
-    var obstruction = SKNode()
-    
     var moveAndRemove = SKAction()
     var gameStarted = Bool()
     var score = Int()
@@ -23,7 +21,7 @@ class GameScene: SKScene {
     var isBallHasContactWithLand = false
     
     override func didMove(to view: SKView) {
-        
+
         createScene()
     }
     
@@ -37,12 +35,13 @@ class GameScene: SKScene {
                 self.createObstruction()
             }
             
+            //MARK: - Spawn of Obstructions
             let delay = SKAction.wait(forDuration: 1.5)
             let spawnDelay = SKAction.sequence([spawn, delay])
             let spawnRepeatForever = SKAction.repeatForever(spawnDelay)
             self.run(spawnRepeatForever)
             
-            let distance = CGFloat(self.frame.width + obstruction.frame.width)
+            let distance = CGFloat(self.frame.width + 200)
             let moveObstructions = SKAction.moveBy(x: -distance - 400, y: 0, duration: TimeInterval(0.003 * distance ))
 
             let removeObstructions = SKAction.removeFromParent()
@@ -81,40 +80,18 @@ class GameScene: SKScene {
         }
     }
     
+    //MARK: - Create Obstructions
     func createObstruction() {
         
         let randomHeight = CGFloat.random(min: 50, max: 180)
         let randomWidth = CGFloat.random(min: 50, max: 200)
-        
-        let scoreNode = SKSpriteNode()
-        scoreNode.size = CGSize(width: 1, height: self.frame.height)
-        scoreNode.position = CGPoint(x: self.frame.width / 2 + randomWidth, y: Constants.Land.height + randomHeight)
-        scoreNode.physicsBody = SKPhysicsBody(rectangleOf: scoreNode.size)
-        scoreNode.physicsBody?.affectedByGravity = false
-        scoreNode.physicsBody?.isDynamic = false
-        scoreNode.physicsBody?.categoryBitMask = BitMaskCategory.Score
-        scoreNode.physicsBody?.collisionBitMask = 0
-        scoreNode.physicsBody?.contactTestBitMask = BitMaskCategory.Ball
-        
-        obstruction = SKNode()
-        
-        let landObstruction = SKSpriteNode(color: .red, size: CGSize(width: randomWidth, height: randomHeight))
-        landObstruction.position = CGPoint(x: self.frame.width / 2 + landObstruction.size.width / 2, y: landObstruction.frame.height / 2 - self.frame.height / 2 + Constants.Land.height)
-        landObstruction.physicsBody = SKPhysicsBody(rectangleOf: landObstruction.size)
-        landObstruction.physicsBody?.categoryBitMask = BitMaskCategory.Obstrucion
-        landObstruction.physicsBody?.collisionBitMask = BitMaskCategory.Ball
-        landObstruction.physicsBody?.contactTestBitMask = BitMaskCategory.Ball
-        landObstruction.physicsBody?.isDynamic = false
-        landObstruction.physicsBody?.affectedByGravity = false
-        
-        obstruction.addChild(scoreNode)
-        obstruction.addChild(landObstruction)
-        landObstruction.zPosition = 1
-        
+
+        let obstruction = Obstruction.set(at: CGPoint(x: randomWidth, y: randomHeight))
         obstruction.run(moveAndRemove)
         self.addChild(obstruction)
     }
     
+    //MARK: - Create RestartButton
     func createRestartButton() {
         
         restartButton = SKSpriteNode(color: SKColor.white, size: CGSize(width: 300, height: 150))
